@@ -9,10 +9,14 @@ import android.os.Parcelable;
  */
 
 public class VerticalIntroItem implements Parcelable {
-
+    public interface NextAction {
+        boolean onNextPressed();
+    }
     private Typeface customTypeFace;
     private String title;
     private String text;
+    private String nextText;
+    private NextAction nextAction;
     private int image;
     private int backgroundColor;
 
@@ -21,6 +25,8 @@ public class VerticalIntroItem implements Parcelable {
         this.text = builder.text;
         this.image = builder.image;
         this.backgroundColor = builder.backgroundColor;
+        this.nextText = builder.nextText;
+        this.nextAction = builder.nextAction;
     }
 
     public String getTitle() {
@@ -29,6 +35,14 @@ public class VerticalIntroItem implements Parcelable {
 
     public String getText() {
         return text;
+    }
+
+    public String getNextText() {
+        return nextText;
+    }
+
+    public NextAction getNextAction() {
+        return nextAction;
     }
 
     public int getImage() {
@@ -56,6 +70,7 @@ public class VerticalIntroItem implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(title);
         dest.writeString(text);
+        dest.writeString(nextText);
         dest.writeInt(image);
         dest.writeInt(backgroundColor);
     }
@@ -63,6 +78,7 @@ public class VerticalIntroItem implements Parcelable {
     private VerticalIntroItem(Parcel in) {
         title = in.readString();
         text = in.readString();
+        nextText = in.readString();
         image = in.readInt();
         backgroundColor = in.readInt();
     }
@@ -82,8 +98,10 @@ public class VerticalIntroItem implements Parcelable {
     public static class Builder {
         private String title;
         private String text;
+        private String nextText;
         private int image;
         private int backgroundColor;
+        private NextAction nextAction;
 
         public Builder() {
         }
@@ -105,6 +123,16 @@ public class VerticalIntroItem implements Parcelable {
 
         public Builder image(int image) {
             this.image = image;
+            return this;
+        }
+
+        public Builder nextText(String text) {
+            this.nextText = text;
+            return this;
+        }
+
+        public Builder nextAction(NextAction action) {
+            this.nextAction = action;
             return this;
         }
 

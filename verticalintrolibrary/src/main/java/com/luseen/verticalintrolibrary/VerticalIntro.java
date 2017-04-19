@@ -20,15 +20,17 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.List;
 
+import static android.content.Context.VIBRATOR_SERVICE;
+
 public abstract class VerticalIntro extends AppCompatActivity {
 
     static final String TAG = "VerticalIntro";
     private static final double SCROLL_DURATION_FACTOR_ON_SCROLL = 4;
     private static final double SCROLL_DURATION_FACTOR_ON_CLICK = 1.5;
     private static final double SCROLL_DURATION_FACTOR_ON_SKIP = 0.5f;
-    private static final int FORWARD_SCROLL_ANIMATION_DURATION = 800;
-    private static final int BACKWARD_SCROLL_ANIMATION_DURATION = 600;
-    private static final int DEFAULT_ANIMATION_DURATION = 400;
+    private static final int FORWARD_SCROLL_ANIMATION_DURATION = 500;
+    private static final int BACKWARD_SCROLL_ANIMATION_DURATION = 200;
+    private static final int DEFAULT_ANIMATION_DURATION = 300;
     private static final int LANDSCAPE_MODE_DEFAULT_ANIMATION_DURATION = 50;
 
     private List<VerticalIntroItem> verticalIntroItemList = new ArrayList<>();
@@ -49,7 +51,6 @@ public abstract class VerticalIntro extends AppCompatActivity {
     private int vibrateIntensity = 20;
     private int currentPosition;
     private double scrollSpeed;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,7 +92,11 @@ public abstract class VerticalIntro extends AppCompatActivity {
             if (isLastPosition) {
                 onDonePressed();
             } else {
-                isChangedFromClick = true;
+                VerticalIntroItem item = verticalIntroItemList.get(currentViewPagerItemPosition);
+                if (item.getNextAction() != null && !item.getNextAction().onNextPressed()) {
+                    return;
+                }
+                 isChangedFromClick = true;
                 verticalViewPager.setScrollDurationFactor(SCROLL_DURATION_FACTOR_ON_SCROLL);
                 verticalViewPager.setCurrentItem(currentViewPagerItemPosition + 1);
                 Utils.makeTranslationYAnimation(bottomView, new AnimatorListenerAdapter() {
@@ -136,7 +141,8 @@ public abstract class VerticalIntro extends AppCompatActivity {
             super.onPageSelected(position);
             onFragmentChanged(position);
 
-            Utils.setUpRecentAppStyle(VerticalIntro.this, verticalIntroItemList.get(position).getBackgroundColor());
+            VerticalIntroItem item = verticalIntroItemList.get(position);
+            Utils.setUpRecentAppStyle(VerticalIntro.this, item.getBackgroundColor());
 
             boolean isLastPosition = position == verticalIntroItemList.size() - 1;
             if (isSkipEnabled) {
@@ -148,6 +154,12 @@ public abstract class VerticalIntro extends AppCompatActivity {
                     if (nextTextView.getText().toString().equals(doneText))
                         Utils.changeTextWhitFade(nextTextView, nextText);
                     Utils.changeViewVisibilityWhitFade(skipContainer, true);
+                    String itemNextText = item.getNextText();
+                    if (itemNextText == null) {
+                        Utils.changeTextWhitFade(nextTextView, nextText);
+                    } else {
+                        Utils.changeTextWhitFade(nextTextView, itemNextText);
+                    }
                 }
             }
 
@@ -217,7 +229,7 @@ public abstract class VerticalIntro extends AppCompatActivity {
         bottomView.setBackgroundColor(ContextCompat.getColor(context, currentBackgroundColor));
     }
 
-    private void addListeners() {
+    protected void addListeners() {
         verticalViewPager.addOnPageChangeListener(pageChangeListener);
         bottomView.setOnClickListener(bottomButtonClickListener);
     }
@@ -268,7 +280,7 @@ public abstract class VerticalIntro extends AppCompatActivity {
                             + (newY[0] - oldY[0]) * (newY[0] - oldY[0]));
                     scrollSpeed = distance / scrollTime;
                 }
-                return false;
+                return true;
             }
         });
     }
@@ -288,15 +300,15 @@ public abstract class VerticalIntro extends AppCompatActivity {
         bottomView = (RelativeLayout) findViewById(R.id.bottom_view);
         skipTextView = (TextView) findViewById(R.id.skip);
         nextTextView = (TextView) findViewById(R.id.next);
-        vibrator = (Vibrator) this.getSystemService(VIBRATOR_SERVICE);
+        vibrator = (Vibrator) context.getSystemService(VIBRATOR_SERVICE);
         skipContainer.setOnClickListener(skipClickListener);
 
         if (nextText == null)
-            nextText = getString(R.string.next);
+            nextText = context.getString(R.string.next);
         if (doneText == null)
-            doneText = getString(R.string.done);
+            doneText = context.getString(R.string.done);
         if (skipText == null)
-            skipText = getString(R.string.skip);
+            skipText = context.getString(R.string.skip);
 
         skipTextView.setText(skipText);
         nextTextView.setText(nextText);
@@ -334,6 +346,10 @@ public abstract class VerticalIntro extends AppCompatActivity {
 
     protected void addIntroItem(VerticalIntroItem verticalIntroItem) {
         verticalIntroItemList.add(verticalIntroItem);
+    }
+
+    public void next() {
+        verticalViewPager.setCurrentItem(currentPosition + 1);
     }
 
     protected void setSkipEnabled(boolean skipEnabled) {
